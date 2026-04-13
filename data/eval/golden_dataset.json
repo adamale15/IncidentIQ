@@ -1,0 +1,27 @@
+[
+  {
+    "question": "What caused the payment service outage in December 2024?",
+    "expected_answer": "The payment service outage was caused by connection pool exhaustion in the database connections. The service was not releasing connections properly after processing webhook requests from the payment provider.",
+    "metadata": {
+      "service": "payment-service",
+      "severity": "P1",
+      "date_range": "2024-12-01 to 2024-12-31"
+    }
+  },
+  {
+    "question": "How do I restart the auth service?",
+    "expected_answer": "To restart the auth service: 1) SSH into the auth service instances, 2) Run 'systemctl restart auth-service', 3) Verify the service is running with 'systemctl status auth-service', 4) Check the health endpoint at /health.",
+    "metadata": {
+      "service": "auth-service",
+      "query_type": "runbook"
+    }
+  },
+  {
+    "question": "What are the common causes of cache service failures?",
+    "expected_answer": "Common causes include: cache stampede during high traffic, memory exhaustion from large objects, connection timeouts to Redis, eviction policy misconfiguration, and network issues between cache and application servers.",
+    "metadata": {
+      "service": "cache",
+      "query_type": "analysis"
+    }
+  }
+]
