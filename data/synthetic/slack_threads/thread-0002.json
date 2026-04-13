@@ -1,0 +1,26 @@
+{
+  "channel": "#incident-20240513",
+  "thread_ts": "2024-05-13T00:00:00",
+  "messages": [
+    {
+      "timestamp": "2024-05-13T00:00:00",
+      "user": "alertbot",
+      "text": "\ud83d\udea8 cart-service - certificate expiration"
+    },
+    {
+      "timestamp": "2024-05-13T00:02:00",
+      "user": "alice",
+      "text": "Investigating"
+    },
+    {
+      "timestamp": "2024-05-13T00:10:00",
+      "user": "bob",
+      "text": "Root cause found. Deploying fix."
+    },
+    {
+      "timestamp": "2024-05-13T00:20:00",
+      "user": "alertbot",
+      "text": "\u2705 RESOLVED"
+    }
+  ]
+}

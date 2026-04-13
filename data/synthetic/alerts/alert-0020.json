@@ -1,0 +1,12 @@
+{
+  "id": "alert-0020",
+  "type": "incident",
+  "summary": "payment-service: rate limiting misconfiguration",
+  "severity": "p1",
+  "status": "triggered",
+  "service": {
+    "name": "payment-service"
+  },
+  "created_at": "2024-01-03T08:00:00",
+  "description": "Alert: payment-service is experiencing rate limiting misconfiguration."
+}

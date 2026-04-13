@@ -1,0 +1,12 @@
+{
+  "id": "alert-0014",
+  "type": "incident",
+  "summary": "payment-service: certificate expiration",
+  "severity": "p1",
+  "status": "triggered",
+  "service": {
+    "name": "payment-service"
+  },
+  "created_at": "2024-01-26T16:00:00",
+  "description": "Alert: payment-service is experiencing certificate expiration."
+}

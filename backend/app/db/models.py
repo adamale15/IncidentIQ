@@ -136,7 +136,7 @@ class Chunk(Base):
     chunk_type = Column(String(50))
     start_char = Column(Integer)
     end_char = Column(Integer)
-    metadata = Column(JSONB)
+    chunk_metadata = Column("metadata", JSONB)  # Rename column attribute to avoid conflict
     qdrant_point_id = Column(UUID(as_uuid=True), unique=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     

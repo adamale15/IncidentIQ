@@ -1,0 +1,12 @@
+{
+  "id": "alert-0002",
+  "type": "incident",
+  "summary": "auth-service: memory leak",
+  "severity": "p2",
+  "status": "triggered",
+  "service": {
+    "name": "auth-service"
+  },
+  "created_at": "2024-02-26T02:00:00",
+  "description": "Alert: auth-service is experiencing memory leak."
+}

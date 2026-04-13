@@ -5,7 +5,7 @@ import logging
 import uuid
 from typing import List, Dict, Any, Optional
 from qdrant_client import QdrantClient
-from qdrant_client.models import QueryRequest, Prefetch, Query, Filter, FieldCondition, MatchValue
+from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 from app.config import settings
 from app.ingestion.embeddings import EmbeddingGenerator
@@ -54,13 +54,10 @@ class HybridRetriever:
         # Step 1: Generate query embedding
         query_embedding = await self.embedding_generator.generate_query_embedding(query)
         
-        # Step 2: Generate sparse query vector
-        query_sparse = self.sparse_generator.generate_qdrant_sparse_vector(query)
-        
-        # Step 3: Build Qdrant filter
+        # Step 2: Build Qdrant filter
         qdrant_filter = self._build_filter(workspace_id, filters)
         
-        # Step 4: Dense vector search
+        # Step 3: Dense vector search
         dense_results = self.client.search(
             collection_name=self.collection_name,
             query_vector=("dense", query_embedding),
@@ -69,16 +66,21 @@ class HybridRetriever:
             with_payload=True
         )
         
-        # Step 5: Sparse vector search
-        sparse_results = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=("bm25", query_sparse),
-            query_filter=qdrant_filter,
-            limit=k * 2,
-            with_payload=True
-        )
+        # Step 4: Sparse vector search
+        sparse_results = []
+        try:
+            query_sparse = self.sparse_generator.generate_qdrant_sparse_vector(query)
+            sparse_results = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=("bm25", query_sparse),
+                query_filter=qdrant_filter,
+                limit=k * 2,
+                with_payload=True
+            )
+        except Exception as exc:
+            logger.warning("Sparse retrieval unavailable, falling back to dense-only search: %s", exc)
         
-        # Step 6: Reciprocal Rank Fusion
+        # Step 5: Reciprocal Rank Fusion
         fused_results = self._reciprocal_rank_fusion(
             dense_results,
             sparse_results,
@@ -155,15 +157,13 @@ class HybridRetriever:
         Returns:
             Fused and sorted results
         """
-        scores = {}
+        scores: Dict[Any, Dict[str, Any]] = {}
         
         # Score dense results
         for rank, result in enumerate(dense_results, start=1):
             point_id = result.id
             rrf_score = self.dense_weight / (k + rank)
-            scores[point_id] = scores.get(point_id, 0) + rrf_score
-            
-            if point_id not in scores or "payload" not in scores.get(point_id, {}):
+            if point_id not in scores:
                 scores[point_id] = {
                     "rrf_score": rrf_score,
                     "dense_score": result.score,

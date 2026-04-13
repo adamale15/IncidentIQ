@@ -25,9 +25,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Incident Intelligence Platform API")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     
-    # Initialize database
-    await init_db()
-    logger.info("Database initialized")
+    # Skip database initialization on startup - tables will be created on first use
+    # await init_db()
+    logger.info("API ready (database will be initialized on first request)")
     
     # TODO: Initialize Qdrant connection
     # TODO: Initialize Redis connection
@@ -37,7 +37,10 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down Incident Intelligence Platform API")
-    await engine.dispose()
+    try:
+        await engine.dispose()
+    except:
+        pass
 
 
 app = FastAPI(

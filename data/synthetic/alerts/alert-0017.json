@@ -1,0 +1,12 @@
+{
+  "id": "alert-0017",
+  "type": "incident",
+  "summary": "cart-service: rate limiting misconfiguration",
+  "severity": "p2",
+  "status": "triggered",
+  "service": {
+    "name": "cart-service"
+  },
+  "created_at": "2024-03-17T20:00:00",
+  "description": "Alert: cart-service is experiencing rate limiting misconfiguration."
+}

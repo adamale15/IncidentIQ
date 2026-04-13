@@ -22,28 +22,45 @@ logger = logging.getLogger(__name__)
 class QdrantManager:
     """Manage Qdrant vector database operations."""
     
-    def __init__(self):
+    def __init__(self, vector_size: int):
         """Initialize Qdrant client."""
         self.client = QdrantClient(url=settings.QDRANT_URL)
         self.collection_name = settings.QDRANT_COLLECTION_NAME
+        self.vector_size = vector_size
     
     def create_collection_if_not_exists(self):
         """Create Qdrant collection with hybrid search support."""
         try:
-            # Check if collection exists
             collections = self.client.get_collections().collections
             exists = any(c.name == self.collection_name for c in collections)
-            
+
             if exists:
-                logger.info(f"Collection '{self.collection_name}' already exists")
-                return
-            
-            # Create collection with dense and sparse vectors
+                collection_info = self.client.get_collection(self.collection_name)
+                vectors = collection_info.config.params.vectors
+                current_size = None
+
+                if isinstance(vectors, dict) and "dense" in vectors:
+                    current_size = vectors["dense"].size
+                elif hasattr(vectors, "size"):
+                    current_size = vectors.size
+
+                if current_size == self.vector_size:
+                    logger.info("Collection '%s' already exists", self.collection_name)
+                    return
+
+                logger.warning(
+                    "Recreating collection '%s' because vector size changed from %s to %s",
+                    self.collection_name,
+                    current_size,
+                    self.vector_size,
+                )
+                self.client.delete_collection(self.collection_name)
+
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config={
                     "dense": VectorParams(
-                        size=768,  # Gemini text-embedding-004 dimension
+                        size=self.vector_size,
                         distance=Distance.COSINE
                     )
                 },
@@ -155,8 +172,10 @@ class IngestionPipeline:
     
     def __init__(self):
         """Initialize pipeline components."""
-        self.qdrant_manager = QdrantManager()
         self.embedding_generator = BatchEmbeddingGenerator()
+        self.qdrant_manager = QdrantManager(
+            vector_size=self.embedding_generator.generator.vector_size
+        )
         self.sparse_generator = BatchSparseVectorGenerator()
         
         # Ensure Qdrant collection exists
@@ -249,7 +268,7 @@ class IngestionPipeline:
                 chunk_type=chunk["chunk_type"],
                 start_char=chunk.get("start_char"),
                 end_char=chunk.get("end_char"),
-                metadata=chunk["metadata"],
+                chunk_metadata=chunk["metadata"],
                 qdrant_point_id=chunk["qdrant_point_id"]
             )
             db_session.add(chunk_model)
@@ -336,7 +355,7 @@ class IngestionPipeline:
                 chunk_type=chunk["chunk_type"],
                 start_char=chunk.get("start_char"),
                 end_char=chunk.get("end_char"),
-                metadata=chunk["metadata"],
+                chunk_metadata=chunk["metadata"],
                 qdrant_point_id=chunk["qdrant_point_id"]
             )
             db_session.add(chunk_model)

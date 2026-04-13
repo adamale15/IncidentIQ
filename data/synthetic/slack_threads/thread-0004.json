@@ -1,0 +1,26 @@
+{
+  "channel": "#incident-20240603",
+  "thread_ts": "2024-06-03T00:00:00",
+  "messages": [
+    {
+      "timestamp": "2024-06-03T00:00:00",
+      "user": "alertbot",
+      "text": "\ud83d\udea8 cart-service - connection pool exhaustion"
+    },
+    {
+      "timestamp": "2024-06-03T00:02:00",
+      "user": "alice",
+      "text": "Investigating"
+    },
+    {
+      "timestamp": "2024-06-03T00:10:00",
+      "user": "bob",
+      "text": "Root cause found. Deploying fix."
+    },
+    {
+      "timestamp": "2024-06-03T00:20:00",
+      "user": "alertbot",
+      "text": "\u2705 RESOLVED"
+    }
+  ]
+}

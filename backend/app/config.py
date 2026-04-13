@@ -2,14 +2,14 @@
 Application configuration using Pydantic settings.
 """
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://iip_user:iip_password@localhost:5432/incidentiq"
+    DATABASE_URL: str = "postgresql+asyncpg://iip_user:iip_password@localhost:5433/incidentiq"
     
     # Qdrant
     QDRANT_URL: str = "http://localhost:6333"
@@ -20,12 +20,14 @@ class Settings(BaseSettings):
     
     # Google Gemini
     GEMINI_API_KEY: str
-    GEMINI_EMBEDDING_MODEL: str = "models/text-embedding-004"
-    GEMINI_FLASH_MODEL: str = "models/gemini-1.5-flash"
-    GEMINI_PRO_MODEL: str = "models/gemini-1.5-pro"
+    GEMINI_EMBEDDING_MODEL: str = "models/embedding-001"
+    GEMINI_FLASH_MODEL: str = "models/gemini-2.5-flash"
+    GEMINI_PRO_MODEL: str = "models/gemini-2.5-pro"
+    EMBEDDING_PROVIDER: str = "local"
+    LOCAL_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     
     # Cohere (optional)
-    COHERE_API_KEY: str | None = None
+    COHERE_API_KEY: Optional[str] = None
     
     # Application
     ENVIRONMENT: str = "development"
@@ -47,8 +49,9 @@ class Settings(BaseSettings):
     EVAL_REGRESSION_THRESHOLD: float = 0.05  # 5% drop triggers warning
     
     class Config:
-        env_file = ".env"
+        env_file = "../.env"  # Look in parent directory (project root)
         case_sensitive = True
+        extra = "ignore"  # Ignore extra fields from .env
 
 
 settings = Settings()
