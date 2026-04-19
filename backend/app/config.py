@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     CONTEXT_MAX_TOKENS: int = 8000
     
     # Evaluation
-    EVAL_GOLDEN_DATASET_PATH: str = "/data/eval/golden_dataset.json"
+    EVAL_GOLDEN_DATASET_PATH: str = "../data/eval/golden_dataset.json"
     EVAL_REGRESSION_THRESHOLD: float = 0.05  # 5% drop triggers warning
     
     class Config:

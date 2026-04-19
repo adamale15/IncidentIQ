@@ -87,13 +87,13 @@ async def global_exception_handler(request, exc):
 
 
 # Include routers
-from app.routers import query
+from app.routers import eval, query
 app.include_router(query.router, prefix="/api", tags=["query"])
+app.include_router(eval.router, prefix="/api", tags=["evaluation"])
 
 # TODO: Add remaining routers as they're implemented
-# from app.routers import auth, sources, conversations, eval, admin
+# from app.routers import auth, sources, conversations, admin
 # app.include_router(auth.router, prefix="/auth", tags=["auth"])
 # app.include_router(sources.router, prefix="/api/sources", tags=["sources"])
 # app.include_router(conversations.router, prefix="/api/conversations", tags=["conversations"])
-# app.include_router(eval.router, prefix="/api/eval", tags=["evaluation"])
 # app.include_router(admin.router, prefix="/api", tags=["admin"])

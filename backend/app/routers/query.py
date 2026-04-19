@@ -1,99 +1,85 @@
 """
 Query router for API endpoints.
 """
-import logging
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import get_db
-from app.retrieval.hybrid import HybridRetriever
-
-logger = logging.getLogger(__name__)
+from app.services.query_service import QueryService
 
 router = APIRouter()
 
 
 class QueryRequest(BaseModel):
-    """Query request model."""
     question: str = Field(..., description="Question to ask")
     workspace_id: str = Field(..., description="Workspace UUID")
-    filters: Optional[Dict[str, Any]] = Field(None, description="Optional metadata filters")
-    top_k: Optional[int] = Field(None, description="Number of results to return")
+    filters: Optional[Dict[str, Any]] = Field(default=None)
+    top_k: Optional[int] = Field(default=None)
+    stream: bool = Field(default=False)
 
 
 class RetrievedChunk(BaseModel):
-    """Retrieved chunk model."""
     id: str
     content: str
     score: float
-    dense_score: float
-    sparse_score: float
+    dense_score: float = 0.0
+    sparse_score: float = 0.0
+    rerank_score: float = 0.0
     metadata: Dict[str, Any]
 
 
 class QueryResponse(BaseModel):
-    """Query response model."""
     question: str
+    answer: str
+    analysis: Dict[str, Any]
     chunks: List[RetrievedChunk]
+    citations: List[Dict[str, Any]]
     latency_ms: int
+    model_used: str
 
 
-@router.post("/query", response_model=QueryResponse)
-async def query_endpoint(
-    request: QueryRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Query endpoint for hybrid retrieval.
-    
-    Args:
-        request: Query request
-        db: Database session
-        
-    Returns:
-        Retrieved chunks with scores
-    """
-    import time
-    start_time = time.time()
-    
+@router.post("/query")
+async def query_endpoint(request: QueryRequest):
     try:
-        # Parse workspace ID
         workspace_id = uuid.UUID(request.workspace_id)
-        
-        # Initialize retriever
-        retriever = HybridRetriever()
-        
-        # Retrieve chunks
-        chunks = await retriever.retrieve(
-            query=request.question,
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid workspace ID")
+
+    service = QueryService()
+
+    if request.stream:
+        generator = service.stream_query(
+            question=request.question,
             workspace_id=workspace_id,
             filters=request.filters,
-            top_k=request.top_k
+            top_k=request.top_k,
         )
-        
-        # Calculate latency
-        latency_ms = int((time.time() - start_time) * 1000)
-        
-        logger.info(f"Query completed in {latency_ms}ms, returned {len(chunks)} chunks")
-        
-        return QueryResponse(
+        return StreamingResponse(generator, media_type="text/event-stream")
+
+    try:
+        result = await service.run_query(
             question=request.question,
-            chunks=[RetrievedChunk(**chunk) for chunk in chunks],
-            latency_ms=latency_ms
+            workspace_id=workspace_id,
+            filters=request.filters,
+            top_k=request.top_k,
         )
-        
-    except ValueError as e:
-        logger.error(f"Invalid workspace ID: {e}")
-        raise HTTPException(status_code=400, detail="Invalid workspace ID")
-    except Exception as e:
-        logger.error(f"Error processing query: {e}", exc_info=True)
+    except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
+
+    return QueryResponse(
+        question=result["question"],
+        answer=result["answer"],
+        analysis=result["analysis"],
+        chunks=[RetrievedChunk(**chunk) for chunk in result["chunks"]],
+        citations=result["citations"],
+        latency_ms=result["latency_ms"],
+        model_used=result["model_used"],
+    )
 
 
 @router.get("/health")
 async def health_check():
-    """Health check endpoint."""
     return {"status": "healthy", "service": "query"}
